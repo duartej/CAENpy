@@ -7,7 +7,7 @@ setuptools.setup(
 	author_email = "m.senger@hotmail.com",
 	description = "Control CAEN equipment with pure Python",
 	url = "https://github.com/SengerM/CAENpy",
-	packages = setuptools.find_packages(),
+    packages = ["CAENpy"],
 	classifiers = [
 		"Programming Language :: Python :: 3",
 		"License :: OSI Approved :: MIT License",
