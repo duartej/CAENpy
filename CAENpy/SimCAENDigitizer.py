@@ -12,6 +12,9 @@ Modified and re-adapted: Jordi Duarte-Campderros (IFCA)
 """
 
 import numpy as np
+import os
+import pickle
+import time
 
 class FakeCAEN_DT5742_Digitizer(object):
     """XXX -- FIXME DOC
@@ -21,10 +24,11 @@ class FakeCAEN_DT5742_Digitizer(object):
         """
         # Create dummy attributes
         _d = lambda : None
-        self.start_acquisition = _d
-        self.stop_acquisition = _d 
         self.close = _d
         self.reset = _d
+
+        self.__n_calls = 0
+        self._fake_status = { 'at least one event available for readout':  False }
 
         # Channel mapping
         VALID_CHANNELS_NAMES = {f'CH{_}' for _ in range(16)}.union({'trigger_group_0','trigger_group_1'})
@@ -116,9 +120,13 @@ class FakeCAEN_DT5742_Digitizer(object):
     def get_acquisition_status(self) -> dict:
         """An event reached the digi (use random)        
         """
-        _fake_status = { 'at least one event available for readout' : np.random.choice([True, False, True, True]) }
-        
-        return _fake_status
+        return self._fake_status 
+
+    def stop_acquisition(self):
+        self._fake_status['at least one event available for readout'] = False
+    
+    def start_acquisition(self):
+        self._fake_status['at least one event available for readout'] = True
 	
     def get_sampling_frequency(self) -> int:
         return 5000
@@ -223,5 +231,25 @@ class FakeCAEN_DT5742_Digitizer(object):
                 event_waveforms[channel_name] = wf
             waveforms.append(event_waveforms)
 
+        # Save the waveforms
+        try:
+            with open('waveforms.pkl','rb') as handle:
+                try:
+                    wfd = pickle.load(handle)
+                except EOFError:
+                    # Some issue with the file, is corrupted?
+                    # Remove it an raise FileNotFoundError to 
+                    # be catch by the next block
+                    os.remove('waveforms.pkl')
+                    raise FileNotFoundError('')
+        except FileNotFoundError:
+            wfd = {}
+        
+        wfd[self.__n_calls] = waveforms
+        with open('waveforms.pkl','wb') as handle:
+            pickle.dump(wfd, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+        self.__n_calls += 1
+        
         return waveforms
 
