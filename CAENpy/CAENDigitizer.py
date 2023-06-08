@@ -508,6 +508,22 @@ class CAEN_DT5742_Digitizer:
 			c_uint32(length),
 		)
 		check_error_code(code)
+	
+    def get_record_length(self)->int:
+		"""Get how many samples should be taken for each event.
+		
+		Returns
+		---------
+		length: int
+			The size of the record (in samples).
+		"""
+		length = c_uint32()
+		code = libCAENDigitizer.CAEN_DGTZ_GetRecordLength(
+			self._get_handle(), 
+			byref(length),
+		)
+		check_error_code(code)
+		return int(length.value)
 
 	def set_ext_trigger_input_mode(self, mode:str):
 		"""Enable or disable the external trigger (TRIG IN).

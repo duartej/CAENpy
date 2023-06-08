@@ -96,8 +96,11 @@ class FakeCAEN_DT5742_Digitizer(object):
         """
         pass
     
-    def set_record_length(self, dummy): 
-        pass
+    def set_record_length(self, length:int): 
+        self._record_length = length
+
+    def get_record_length(self):
+        return self._record_length
 	
     def set_fast_trigger_DC_offset(self, DAC :int=None, V :float=None):
         """Dummy ...
@@ -174,7 +177,7 @@ class FakeCAEN_DT5742_Digitizer(object):
         n_events = np.random.randint(low=0,high=1024)
         waveforms = []
         sampling_frequency = 5e9
-        for n_event in range(n_events):      
+        for n_event in range(n_events):     
             event_waveforms = {}
             for n_channel in range(18):
                 n_group = int(n_channel / 9)
