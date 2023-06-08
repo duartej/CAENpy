@@ -35,7 +35,8 @@ class FakeCAEN_DT5742_Digitizer(object):
             raise ValueError(f'Each element of `channels` must be an integer '\
                     'number between 0 and 15. At least one of the values is wrong, I received `channels={channels}`. ')
         self.channels = sorted(list(channels))
-        # Assign randomly the channels to the duts
+        # Assign randomly the channels to the duts --- 
+        # This can be eventually overwritten
         self.channel_mapping = {}
         # Extract how many DUts we have
         n_duts = np.random.randint(low=1, high=min(4,len(self.channels)))
@@ -59,49 +60,68 @@ class FakeCAEN_DT5742_Digitizer(object):
     def write_register(self, address, data):
         """Dummy ...
         """
-        return None
+        pass
 
     def set_acquisition_mode(self, mode: str):
         """Dummy ...
         """
-        return None
+        pass
     
     def set_ext_trigger_input_mode(self, mode: str):
         """Dummy ...
         """
-        return None
+        pass
 	
     def set_fast_trigger_mode(self, enabled:bool):
         """Dummy ...
         """
-        return None
+        pass
 	
     def set_fast_trigger_digitizing(self, enabled:bool):
         """Dummy ...
         """
-        return None
+        pass
+    
+    def set_fast_trigger_threshold(self, dummy:int ):
+        pass
+
+    def set_post_trigger_size(self, dummy:int):
+        pass
+
+    def set_trigger_polarity(self, channel, edge ): 
+        pass
 	
     def enable_channels(self, group_1 :bool, group_2 :bool):
         """Dummy ...
         """
-        return None
+        pass
+    
+    def set_record_length(self, dummy): 
+        pass
 	
     def set_fast_trigger_DC_offset(self, DAC :int=None, V :float=None):
         """Dummy ...
         """
-        return None
+        pass
+    
+    def set_sampling_frequency(self, freq: int):
+        pass
+
+    def set_max_num_events_BLT(self, dummy: int):
+        pass
 
     def get_acquisition_status(self) -> dict:
         """An event reached the digi (use random)        
         """
-        _fake_status['at least one event available for readout'] = np.random.choice([True, False, True, True])
+        _fake_status = { 'at least one event available for readout' : np.random.choice([True, False, True, True]) }
         
         return _fake_status
 	
     def get_sampling_frequency(self) -> int:
         return 5000
 
-    def get_waveforms(get_time :bool=True, 
+    def get_waveforms(self, 
+                      get_time :bool=True, 
                       get_ADCu_instead_of_volts :bool=False):
         """Reads all the data from the digitizer into the computer and parses
         it, returning a human friendly data structure with the waveforms.
