@@ -72,6 +72,7 @@ class EventInfo(Structure):
         ("EventCounter", c_uint32),
         ("TriggerTimeTag", c_uint32)]
 
+# XXX -- TO BE REMOVED from here? 
 def decode_event_waveforms_to_python_friendly_stuff(event:Event, ADC_peak_to_peak_dynamic_range_volts:float=None, time_axis_parameters:dict=None, ADC_dynamic_range_margin:int=77):
     """Decode the waveforms contained in an `Event` object into human friendly
     pythonic objects.
