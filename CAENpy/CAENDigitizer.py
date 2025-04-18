@@ -284,6 +284,11 @@ class CAEN_DT5742_Digitizer:
         """
         if self.get_acquisition_status()['acquiring now'] == True:
             raise RuntimeError(f'The digitizer is already acquiring, cannot start a new acquisition.')
+        # Allocate memory buffer for the decoded events
+        self._allocateEvent()
+        # Allocate read memory
+        self._mallocBuffer()
+
         if DRS4_correction == True:
             self._LoadDRS4CorrectionData(MHz=self.get_sampling_frequency())
         self._DRS4_correction(enable=DRS4_correction)
@@ -294,6 +299,10 @@ class CAEN_DT5742_Digitizer:
         """Stops the acquisition and cleans the memory used by the `libCAENDigitizer`
         library to read out the instrument."""
         self._stop_acquisition()
+        
+        # Deallocate buffers
+        self._freeBuffer()
+        self._freeEvent()
     
     def __enter__(self):
         self.start_acquisition()
@@ -898,8 +907,8 @@ class CAEN_DT5742_Digitizer:
             it is automatically added in the return dictionaries.
         """
         
-        self._allocateEvent()
-        self._mallocBuffer()
+        #self._allocateEvent()
+        #self._mallocBuffer()
         
         self._ReadData() # Bring data from digitizer to PC.
         
@@ -923,8 +932,8 @@ class CAEN_DT5742_Digitizer:
             )
             events.append(event_waveforms)
         
-        self._freeEvent()
-        self._freeBuffer()
+        #self._freeEvent()
+        #self._freeBuffer()
         
         return events
     
