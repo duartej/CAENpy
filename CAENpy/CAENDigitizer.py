@@ -6,7 +6,9 @@ from ctypes import *
 import time
 import numpy
 
-libCAENDigitizer = CDLL('/usr/lib/libCAENDigitizer.so') # Change the path according to your installation. This is the default one in Ubuntu 22.04. The official library can be found here https://www.caen.it/products/caendigitizer-library/
+# Change the path according to your installation. This is the default one in 
+# Ubuntu 22.04. The official library can be found here https://www.caen.it/products/caendigitizer-library/
+libCAENDigitizer = CDLL('/usr/lib/libCAENDigitizer.so') 
 
 CAEN_DGTZ_DRS4Frequency_MEGA_HERTZ = {
     750: 3,
@@ -243,15 +245,27 @@ class CAEN_DT5742_Digitizer:
         self.__handle = c_int() # Handle object, keep track of our connection.
         
         # These are some objects required by the libCAENDigitizer.
-        self.eventObject = POINTER(Event)()# Stores the event that's currently being processed. Is overwritten by the next event as soon as decodeEvent() is called.
-        self.eventPointer = POINTER(c_char)() # Points to the event that's currently being processed.
-        self.eventInfo = EventInfo() # Stores some stats about the event that's currently being processed.
-        self.eventBuffer = POINTER(c_char)() # Stores the last block of events transferred from the digitizer.
-        self.eventAllocatedSize = c_uint32() # Size in memory of the event object.
-        self.eventBufferSize = c_uint32() # Size in memory of the events' block transfer.
-        self.eventVoidPointer = cast(byref(self.eventObject), POINTER(c_void_p)) # Need to create a **void since technically speaking other kinds of Event() esist as well (the CAENDigitizer library supports a multitude of devices, with different Event() structures) and we need to pass this to "universal" methods.
-        
-        self._open() # Open the connection to the digitizer.
+        # --------------------------------------------------------------------
+        # Stores the event that's currently being processed. 
+        # Is overwritten by the next event as soon as decodeEvent() is called.
+        self.eventObject = POINTER(Event)()   
+        # Points to the event that's currently being processed.
+        self.eventPointer = POINTER(c_char)() 
+        # Stores some stats about the event that's currently being processed.
+        self.eventInfo = EventInfo() 
+        # Stores the last block of events transferred from the digitizer.
+        self.eventBuffer = POINTER(c_char)() 
+        # Size in memory of the event object.
+        self.eventAllocatedSize = c_uint32() 
+        # Size in memory of the events' block transfer.
+        self.eventBufferSize = c_uint32() 
+        # Need to create a **void since technically speaking other kinds of Event() 
+        # exist as well (the CAENDigitizer library supports a multitude of devices,
+        # with different Event() structures) and we need to pass this to "universal" methods. 
+        self.eventVoidPointer = cast(byref(self.eventObject), POINTER(c_void_p))
+
+        # Open the connection to the digitizer.
+        self._open() 
         
         model = self.get_info()['ModelName'].decode('utf8')
         if 'DT5742' not in model:
@@ -868,6 +882,59 @@ class CAEN_DT5742_Digitizer:
             code = libCAENDigitizer.CAEN_DGTZ_DisableDRS4Correction(self._get_handle())
         check_error_code(code)
     
+    def get_raw_events(self):
+        """Reads all the data from the digitizer into the computer and returns a 
+        list of raw events
+        
+        See CAEN digitizer user manual 9.7.2 Event Structure
+        # [HEADER: 4 x 32b]
+        # [DATA:   EventSize x 32b]
+        
+        Returns
+        -------
+        events: list of events 
+                [ (Trigger time tag, raw events), ... ]
+        """
+        
+        # Bring data from digitizer, eventBuffer and eventBufferSize has been updated
+        self._ReadData() 
+        raw_data = string_at(self.eventBuffer, self.eventBufferSize)
+        
+        # Extract event by event 
+        n_events = self._GetNumEvents()
+        current_event = 0
+        trigger_raw_events = []
+        offset = 0
+        while offset < len(raw_events):
+            # XXX --> probably this is done by the _GetEventInfo function
+            # XXX     TBD
+            # Check the header is present
+            if offset + 3 > len(raw_data):
+                print('Incomplete buffer!!')
+                break
+
+            # Put the "header info" of event number `n_event` inside `self.eventInfo`, 
+            # to extract size of the event
+            self._GetEventInfo(current_event)
+            # Size of the event in 32b words
+            total_bytes = self.EventInfo["EventSize"] * 4
+
+            # XXX --> probably this is done by the _GetEventInfo function
+            # XXX     TBD
+            # Check the header is present
+            if offset + total_bytes > len(raw_data):
+                print('Truncated event!')
+                break
+            
+            # Extract the event
+            event = raw_data[offset:offset + total_bytes]
+            trigger_raw_events.append( (self.EventInfo["EventCounter"], event) )
+            
+            # update the position for the next event
+            offset += total_bytes
+
+        return trigger_raw_events
+
     def get_waveforms(self, get_time:bool=True, get_ADCu_instead_of_volts:bool=False):
         """Reads all the data from the digitizer into the computer and parses
         it, returning a human friendly data structure with the waveforms.
@@ -1006,6 +1073,7 @@ def __init__():
         libCAENDigitizer.CAEN_DGTZ_SWStartAcquisition,
         libCAENDigitizer.CAEN_DGTZ_SWStopAcquisition,
         libCAENDigitizer.CAEN_DGTZ_ReadData,
+        libCAENDigitizer.CAEN_DGTZ_GetEventPtr,
         libCAENDigitizer.CAEN_DGTZ_GetNumEvents,
         libCAENDigitizer.CAEN_DGTZ_GetEventInfo,
         libCAENDigitizer.CAEN_DGTZ_DecodeEvent,
