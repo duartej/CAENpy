@@ -594,7 +594,7 @@ class CAEN_DT5742_Digitizer:
         code = libCAENDigitizer.CAEN_DGTZ_SetGroupFastTriggerThreshold(
             self._get_handle(), 
             c_uint32(0), # This is for the 'group', not sure what it is but it is always 0 for us.
-            c_uint32(threshold)
+            c_uint32(DAC)
         )
         check_error_code(code)
 
